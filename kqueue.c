@@ -70,6 +70,7 @@ struct kqop {
 	struct kevent *events;
 	int events_size;
 	int kq;
+	int notify_event_added;
 	pid_t pid;
 };
 
@@ -80,6 +81,12 @@ static int kq_sig_add(struct event_base *, int, short, short, void *);
 static int kq_sig_del(struct event_base *, int, short, short, void *);
 static int kq_dispatch(struct event_base *, struct timeval *);
 static void kq_dealloc(struct event_base *);
+
+#if defined(EVFILT_USER) && defined(NOTE_TRIGGER)
+static int kq_add_notify_event(struct kqop *);
+static int kq_notify_base(struct event_base *);
+#define NOTIFY_IDENT 42
+#endif
 
 const struct eventop kqops = {
 	"kqueue",
@@ -153,6 +160,12 @@ kq_init(struct event_base *base)
 	}
 
 	base->evsigsel = &kqsigops;
+
+#if defined(EVFILT_USER) && defined(NOTE_TRIGGER)
+	if (kq_add_notify_event(kqueueop) == 0) {
+		base->th_notify_fn = kq_notify_base;
+	}
+#endif
 
 	return (kqueueop);
 err:
@@ -335,12 +348,21 @@ kq_dispatch(struct event_base *base, struct timeval *tv)
 			return (-1);
 		}
 
-		if (events[i].filter == EVFILT_READ) {
+		switch (events[i].filter) {
+		case EVFILT_READ:
 			which |= EV_READ;
-		} else if (events[i].filter == EVFILT_WRITE) {
+			break;
+		case EVFILT_WRITE:
 			which |= EV_WRITE;
-		} else if (events[i].filter == EVFILT_SIGNAL) {
+			break;
+		case EVFILT_SIGNAL:
 			which |= EV_SIGNAL;
+			break;
+		case EVFILT_USER:
+			if (events[i].ident == NOTIFY_IDENT) {
+				base->is_notify_pending = 0;
+				continue;
+			}
 		}
 
 		if (!which)
@@ -440,3 +462,51 @@ kq_sig_del(struct event_base *base, int nsignal, short old, short events, void *
 
 	return (0);
 }
+
+#if defined(EVFILT_USER) && defined(NOTE_TRIGGER)
+
+/* OSX 10.6 and FreeBSD 8.1 add support for EVFILT_USER, which we can use
+ * to wake up the event loop from another thread. */
+
+static int
+kq_add_notify_event(struct kqop *kqop)
+{
+	struct kevent kev;
+	struct timespec timeout = { 0, 0 };
+
+	if (kqop->notify_event_added)
+		return 0;
+
+	memset(&kev, 0, sizeof(kev));
+	kev.ident = NOTIFY_IDENT;
+	kev.filter = EVFILT_USER;
+	kev.flags = EV_ADD | EV_CLEAR;
+
+	if (kevent(kqop->kq, &kev, 1, NULL, 0, &timeout) == -1)
+		return -1;
+
+	kqop->notify_event_added = 1;
+
+	return 0;
+}
+
+static int
+kq_notify_base(struct event_base *base)
+{
+	struct kqop *kqop = base->evbase;
+	struct kevent kev;
+	struct timespec timeout = { 0, 0 };
+	if (! kqop->notify_event_added)
+		return -1;
+
+	memset(&kev, 0, sizeof(kev));
+	kev.ident = NOTIFY_IDENT;
+	kev.filter = EVFILT_USER;
+	kev.fflags = NOTE_TRIGGER;
+
+	if (kevent(kqop->kq, &kev, 1, NULL, 0, &timeout) == -1)
+		return -1;
+
+	return 0;
+}
+#endif
