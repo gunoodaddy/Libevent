@@ -138,7 +138,7 @@ main(int argc, char **argv)
 #ifdef _WIN32
 	CloseHandle(socket);
 #endif
-	libevent_shutdown();
+	libevent_global_shutdown();
 	return (0);
 }
 

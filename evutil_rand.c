@@ -110,7 +110,8 @@ evutil_secure_rng_global_setup_locks_(const int enable_locks)
 #endif
 
 static void
-evutil_free_secure_rng_globals_locks() {
+evutil_free_secure_rng_globals_locks(void)
+{
 #ifndef _EVENT_DISABLE_THREAD_SUPPORT
 	if (arc4rand_lock != NULL) {
 		EVTHREAD_FREE_LOCK(arc4rand_lock, 0);
@@ -119,7 +120,8 @@ evutil_free_secure_rng_globals_locks() {
 	return;
 }
 void
-evutil_free_secure_rng_globals(void) {
+evutil_free_secure_rng_globals(void)
+{
     evutil_free_secure_rng_globals_locks();
 }
 

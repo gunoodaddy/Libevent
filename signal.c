@@ -434,7 +434,8 @@ evsig_dealloc(struct event_base *base)
 }
 
 static void
-evsig_free_globals_locks(void) {
+evsig_free_globals_locks(void)
+{
 #ifndef _EVENT_DISABLE_THREAD_SUPPORT
 	if (evsig_base_lock != NULL) {
 		EVTHREAD_FREE_LOCK(evsig_base_lock, 0);
@@ -444,7 +445,8 @@ evsig_free_globals_locks(void) {
 }
 
 void
-evsig_free_globals(void) {
+evsig_free_globals(void)
+{
 	evsig_free_globals_locks();
 }
 

@@ -2823,7 +2823,8 @@ event_base_del_virtual(struct event_base *base)
 }
 
 static void
-event_free_debug_globals_locks(void) {
+event_free_debug_globals_locks(void)
+{
 #ifndef _EVENT_DISABLE_THREAD_SUPPORT
 #ifndef _EVENT_DISABLE_DEBUG_MODE
 	if (_event_debug_map_lock != NULL) {
@@ -2835,29 +2836,34 @@ event_free_debug_globals_locks(void) {
 }
 
 static void
-event_free_debug_globals(void) {
+event_free_debug_globals(void)
+{
 	event_free_debug_globals_locks();
 }
 
 static void
-event_free_evsig_globals(void) {
+event_free_evsig_globals(void)
+{
 	evsig_free_globals();
 }
 
 static void
-event_free_evutil_globals(void) {
+event_free_evutil_globals(void)
+{
 	evutil_free_globals();
 }
 
 static void
-event_free_globals(void) {
+event_free_globals(void)
+{
 	event_free_debug_globals();
 	event_free_evsig_globals();
 	event_free_evutil_globals();
 }
 
 void
-libevent_shutdown(void) {
+libevent_global_shutdown(void)
+{
 	event_free_globals();
 }
 
