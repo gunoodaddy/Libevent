@@ -595,7 +595,7 @@ event_base_new_with_config(const struct event_config *cfg)
 		    cfg->limit_callbacks_after_prio;
 	} else {
 		base->max_dispatch_time.tv_sec = -1;
-		base->limit_callbacks_after_prio = 0;
+		base->limit_callbacks_after_prio = 1;
 	}
 	if (cfg && cfg->max_dispatch_callbacks >= 0) {
 		base->max_dispatch_callbacks = cfg->max_dispatch_callbacks;
@@ -932,7 +932,7 @@ event_config_new(void)
 	TAILQ_INIT(&cfg->entries);
 	cfg->max_dispatch_interval.tv_sec = -1;
 	cfg->max_dispatch_callbacks = INT_MAX;
-	cfg->limit_callbacks_after_prio = 0;
+	cfg->limit_callbacks_after_prio = 1;
 
 	return (cfg);
 }
@@ -1013,6 +1013,8 @@ event_config_set_max_dispatch_interval(struct event_config *cfg,
 		cfg->max_dispatch_interval.tv_sec = -1;
 	cfg->max_dispatch_callbacks =
 	    max_callbacks >= 0 ? max_callbacks : INT_MAX;
+	if (min_priority <= 0)
+		min_priority = 1;
 	cfg->limit_callbacks_after_prio = min_priority;
 	return (0);
 }
