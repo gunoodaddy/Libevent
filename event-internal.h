@@ -366,6 +366,17 @@ void event_base_del_virtual(struct event_base *base);
 */
 void event_base_assert_ok(struct event_base *base);
 
+/* Helper function: Call 'fn' exactly once every inserted or active event in
+ * the event_base 'base'.
+ *
+ * If fn returns 0, continue on to the next event. Otherwise, return the same
+ * value that fn returned.
+ *
+ * Requires that 'base' be locked.
+ */
+int event_base_foreach_event_(struct event_base *base,
+    int (*fn)(struct event_base *, struct event *, void *), void *arg);
+
 #ifdef __cplusplus
 }
 #endif
