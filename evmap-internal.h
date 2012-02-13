@@ -111,7 +111,7 @@ void evmap_check_integrity(struct event_base *base);
  * more events.
  */
 int evmap_foreach_event(struct event_base *base,
-    int (*fn)(struct event_base *, struct event *, void *),
+    event_base_foreach_event_cb fn,
     void *arg);
 
 #endif /* _EVMAP_H_ */
